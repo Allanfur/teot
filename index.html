@@ -100,6 +100,14 @@ nav.tabs .count{font-size:12px;color:var(--muted);margin-left:4px}
 .tag em{font-style:normal;color:var(--muted);margin-left:4px}
 .know{margin:0;padding-left:18px;columns:2 280px;column-gap:32px}
 .know li{margin:0 0 5px;break-inside:avoid}
+.dsplit{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);gap:8px 36px;align-items:start}
+.know{columns:auto}
+.dqs{position:sticky;top:124px}
+.dqs h3 em{font-style:normal;color:var(--muted);font-weight:500;margin-left:4px}
+.qside{display:flex;flex-direction:column;gap:10px;max-height:min(70vh,640px);overflow-y:auto;padding-right:4px;overscroll-behavior:contain}
+.qc{border:1px solid var(--line);border-radius:8px;padding:10px 12px;background:var(--bg)}
+.qc .qtext{margin:4px 0 6px;font-size:14.5px}
+.qc .ans p{background:color-mix(in srgb,var(--accent) 14%,var(--surface))}
 .statusbar{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:4px}
 .statusbar label{font-size:13px;color:var(--muted);margin-right:4px}
 .seg{display:inline-flex;border:1px solid var(--line);border-radius:6px;overflow:hidden}
@@ -131,6 +139,9 @@ footer{color:var(--muted);font-size:13px;padding:40px 0 60px;max-width:70ch}
   .rank{font-size:15px}
   .detail{padding-left:4px}
   .dgrid{grid-template-columns:1fr}
+  .dsplit{grid-template-columns:1fr}
+  .dqs{position:static}
+  .qside{max-height:none;overflow:visible}
   .spine{height:48px}
 }
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
@@ -217,6 +228,7 @@ const YEARS=[];for(let y=2010;y<=2026;y++)YEARS.push(y);
 const $=id=>document.getElementById(id);
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const norm=s=>String(s).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
+const noGab=g=>/não identificado/i.test(g);
 const fmt=n=>n.toLocaleString('pt-BR');
 const totalQ=Q.length, totalInT=T.reduce((a,t)=>a+t.n,0);
 const anosAll=[...new Set(Q.map(q=>q.ano))].sort((a,b)=>a-b);
@@ -309,21 +321,29 @@ function rowHTML(t,i){
   <div class="detail">${o?detailHTML(t,i):''}</div></li>`;
 }
 function detailHTML(t,i){
-  const st=stOf(t), nq=(qByT.get(i)||[]).length;
+  const st=stOf(t), qs=qByT.get(i)||[];
   return `<div class="statusbar"><label>Seu status</label><span class="seg">${STS.map(s=>`<button aria-pressed="${s===st}" data-s="${s}" data-i="${i}">${s}</button>`).join('')}</span></div>
-  <div class="dgrid">
-   <div>
-    <h3>O que a banca já cobrou</h3><ul class="know">${splitList(t.saber).map(x=>`<li>${esc(x)}</li>`).join('')}</ul>
-    <h3>Assuntos específicos</h3><div class="tags">${splitList(t.conc).map(x=>`<span class="tag">${esc(x)}</span>`).join('')}</div>
-   </div>
-   <div>
+  <div class="dsplit">
+   <div class="dinfo">
     <h3>Anos em que caiu</h3><div class="years">${YEARS.map(y=>`<span class="${t.anos.includes(y)?'on':''}">${String(y).slice(2)}</span>`).join('')}</div>
+    <div class="tags" style="margin-top:10px"><span class="tag">TEOT<em>${t.teot}</em></span><span class="tag">TARO<em>${t.taro}</em></span><span class="tag">Prioridade ${PR[t.prio][0].toLowerCase()}<em>${String(t.idx).replace('.',',')}</em></span></div>
+    <h3>O que a banca já cobrou</h3><ul class="know">${splitList(t.saber).map(x=>`<li>${esc(x)}</li>`).join('')}</ul>
     <h3>Subtemas</h3><div class="tags">${counted(t.sub)}</div>
     <h3>Forma de cobrança</h3><div class="tags">${counted(t.formas)}</div>
-    <h3>Bancas</h3><div class="tags"><span class="tag">TEOT<em>${t.teot}</em></span><span class="tag">TARO<em>${t.taro}</em></span><span class="tag">Prioridade ${PR[t.prio][0].toLowerCase()}<em>${String(t.idx).replace('.',',')}</em></span></div>
+    <h3>Assuntos específicos</h3><div class="tags">${splitList(t.conc).map(x=>`<span class="tag">${esc(x)}</span>`).join('')}</div>
    </div>
-  </div>
-  ${nq?`<button class="linkbtn" data-qt="${i}">Ver as ${nq} questões deste tema</button>`:''}`;
+   <div class="dqs">
+    <h3>Questões que já caíram <em>${qs.length}</em></h3>
+    <div class="qside">${qs.length?qs.map(qCard).join(''):'<p class="empty">Nenhuma questão vinculada a este tema.</p>'}</div>
+   </div>
+  </div>`;
+}
+function qCard(q){
+  return `<article class="qc">
+    <div class="qmeta"><b>${esc(q.prova)}, questão ${q.num}</b><span>${esc(q.sub)}</span>${q.img?'<span class="img">tem imagem no original</span>':''}</div>
+    <p class="qtext">${esc(q.enun)}</p>
+    ${noGab(q.gab)?'<div class="ans none">Gabarito não identificado nesta base</div>':`<details class="ans"><summary>Mostrar gabarito</summary><p>${esc(q.gab)}</p></details>`}
+  </article>`;
 }
 function filteredT(){
   const q=norm($('t-q').value.trim()), a=$('t-area').value, s=$('t-st').value, b=$('t-banca').value;
@@ -363,7 +383,6 @@ function openTema(i){
 
 /* ---------- questions ---------- */
 let qTema=-1, qShown=40, onlyGab=false;
-const noGab=g=>/não identificado/i.test(g);
 function resetQFilters(){$('q-q').value='';$('q-area').value='';$('q-ano').value='';$('q-banca').value='';onlyGab=false;$('q-gab').setAttribute('aria-pressed','false')}
 ['q-q','q-area','q-ano','q-banca'].forEach(id=>$(id).addEventListener('input',()=>renderQ(true)));
 $('q-gab').addEventListener('click',()=>{onlyGab=!onlyGab;$('q-gab').setAttribute('aria-pressed',onlyGab);renderQ(true)});
