@@ -100,11 +100,12 @@ nav.tabs .count{font-size:12px;color:var(--muted);margin-left:4px}
 .tag em{font-style:normal;color:var(--muted);margin-left:4px}
 .know{margin:0;padding-left:18px;columns:2 280px;column-gap:32px}
 .know li{margin:0 0 5px;break-inside:avoid}
-.dsplit{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);gap:8px 36px;align-items:start}
+.dsplit{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);gap:8px 36px;align-items:stretch}
 .know{columns:auto}
-.dqs{position:sticky;top:124px}
+.dqs{display:flex;flex-direction:column;min-height:420px}
+.qwrap{flex:1;position:relative;min-height:0}
 .dqs h3 em{font-style:normal;color:var(--muted);font-weight:500;margin-left:4px}
-.qside{display:flex;flex-direction:column;gap:10px;max-height:min(70vh,640px);overflow-y:auto;padding-right:4px;overscroll-behavior:contain}
+.qside{position:absolute;inset:0;display:flex;flex-direction:column;gap:10px;overflow-y:auto;padding-right:4px;overscroll-behavior:contain}
 .qc{border:1px solid var(--line);border-radius:8px;padding:10px 12px;background:var(--bg)}
 .qc .qtext{margin:4px 0 6px;font-size:14.5px}
 .qc .ans p{background:color-mix(in srgb,var(--accent) 14%,var(--surface))}
@@ -140,8 +141,8 @@ footer{color:var(--muted);font-size:13px;padding:40px 0 60px;max-width:70ch}
   .detail{padding-left:4px}
   .dgrid{grid-template-columns:1fr}
   .dsplit{grid-template-columns:1fr}
-  .dqs{position:static}
-  .qside{max-height:none;overflow:visible}
+  .dqs{min-height:0}
+  .qside{position:static;overflow:visible}
   .spine{height:48px}
 }
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
@@ -334,7 +335,7 @@ function detailHTML(t,i){
    </div>
    <div class="dqs">
     <h3>Questões que já caíram <em>${qs.length}</em></h3>
-    <div class="qside">${qs.length?qs.map(qCard).join(''):'<p class="empty">Nenhuma questão vinculada a este tema.</p>'}</div>
+    <div class="qwrap"><div class="qside">${qs.length?qs.map(qCard).join(''):'<p class="empty">Nenhuma questão vinculada a este tema.</p>'}</div></div>
    </div>
   </div>`;
 }
